@@ -3,15 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Model\User;
-use http\Env\Response;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Validation\ValidationException;
 
+/**
+ * Class AdminActivateController
+ * @package App\Http\Controllers
+ */
 class AdminActivateController extends Controller
 {
     /**
-     * @return Response
+     * @return JsonResponse
+     * @throws ValidationException
      */
     public function activate()
     {
@@ -20,19 +25,40 @@ class AdminActivateController extends Controller
         ]);
 
         if($this->request->user()->getRoleName() == 'admin') {
-            $this->addMessage('success', 'Your admin');
+            $user = DB::table('users')
+                ->where('id', '=', $this->request->input('id'))
+                ->where('active', '=', '0');
+
+            if($user->count() === 1) {
+                $result = DB::table('users')->where('active', '=', '0')->update(['active' => '1']);
+
+                if($result) {
+                    $this->addMessage('success', 'Users activated.');
+                }
+                else {
+                    $this->addMessage('error', 'Your does not exists or is already activated.');
+                }
+            }
+            else {
+                $this->addMessage('error', 'Your does not exists or is already activated.');
+            }
+
+
         }
         else {
             $this->addMessage('error', 'Your not an admin.');
         }
 
-        // is Admin
         // User exists
         // activate user
 
         return $this->getResponse();
     }
 
+    /**
+     * @return JsonResponse
+     * @throws ValidationException
+     */
     public function select()
     {
         $validation = $this->validate($this->request, []);
