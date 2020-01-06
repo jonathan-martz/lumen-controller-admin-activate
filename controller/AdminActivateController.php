@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Model\User;
 use http\Env\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,13 @@ class AdminActivateController extends Controller
             'id' => 'required|integer'
         ]);
 
+        if($this->request->user()->getRoleName() == 'admin') {
+            $this->addMessage('success', 'Your admin');
+        }
+        else {
+            $this->addMessage('error', 'Your not an admin.');
+        }
+
         // is Admin
         // User exists
         // activate user
@@ -29,8 +37,21 @@ class AdminActivateController extends Controller
     {
         $validation = $this->validate($this->request, []);
 
-        // is Admin
-        // return list of Users which are not activated yet
+        if($this->request->user()->getRoleName() == 'admin') {
+            $users = DB::table('users')
+                ->where('RID', '<>', $this->request->user()->getAttribute('RID'))
+                ->where('active', '=', '0');
+
+            $user = [];
+            foreach($users->get() as $key => $data) {
+                $user[] = new User($data);
+            }
+
+            $this->addResult('users', $user);
+        }
+        else {
+            $this->addMessage('error', 'Your not an admin.');
+        }
 
         return $this->getResponse();
     }
